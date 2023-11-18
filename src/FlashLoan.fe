@@ -1,16 +1,69 @@
-// events
+use std::evm
+
 struct FlashLoanExecuted {
     #indexed
     pub borrower: address
     pub amount: u256
 }
 
+contract IFlashLoanReceiver {
+    pub fn executeOperation(self, amount: u256, fee: u256, initiator: address) {
+        revert
+    }
+}
+
 contract FlashLoan {
     owner: address
-    // Fee per million (1e6 = 100%)
-    feePerMillion: u256
+    feePerMillion: u256 // Fee per million (1e6 = 100%)
+
+    fn only_owner(self, ctx: Context) {
+        assert ctx.msg_sender() == self.owner, "FlashLoan: Only owner"
+    }
 
     pub fn __init__(mut self, ctx: Context) {
         self.owner = ctx.msg_sender()
+    }
+
+    pub fn flashLoan(mut self, mut ctx: Context, amount: u256) {
+        let mut balance_before: u256
+        unsafe {
+            balance_before = evm::balance()
+        }
+        assert balance_before >= amount, "FlashLoan: Insufficient liquidity"
+        let fee: u256 = (amount * self.feePerMillion) / 100
+        ctx.send_value(to: ctx.msg_sender(), wei: amount)
+
+        let mut receiver: IFlashLoanReceiver = IFlashLoanReceiver(ctx.msg_sender())
+        receiver.executeOperation(
+            amount: amount,
+            fee: fee,
+            initiator: ctx.msg_sender()
+        )
+
+        let mut balance_after: u256
+        unsafe {
+            balance_after = evm::balance()
+        }
+        assert balance_after >= balance_before + fee, "FlashLoan: Loan not repaid with fee"
+        ctx.emit(FlashLoanExecuted(borrower: ctx.msg_sender(), amount: amount))
+    }
+
+    pub fn owner(self) -> address {
+        return self.owner
+    }
+
+    pub fn feePerMillion(self) -> u256 {
+        return self.feePerMillion
+    }
+
+    pub fn setFeePerMillion(mut self, ctx: Context, _feePerMillion: u256) {
+        self.only_owner(ctx)
+        assert _feePerMillion < 1000000, "FlashLoan: Fee too high"
+        self.feePerMillion = _feePerMillion
+    }
+
+    pub fn withdraw(self, mut ctx: Context, recipient: address, amount: u256) {
+        self.only_owner(ctx)
+        ctx.send_value(to: recipient, wei: amount)
     }
 }
