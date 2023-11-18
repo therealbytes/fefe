@@ -1,0 +1,16 @@
+// events
+struct FlashLoanExecuted {
+    #indexed
+    pub borrower: address
+    pub amount: u256
+}
+
+contract FlashLoan {
+    owner: address
+    // Fee per million (1e6 = 100%)
+    feePerMillion: u256
+
+    pub fn __init__(mut self, ctx: Context) {
+        self.owner = ctx.msg_sender()
+    }
+}

@@ -5,6 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 import {DeployedBytecode as SolidityBytecode} from "./bytecode/Solidity.sol";
+import {DeployedBytecode as FeBytecode} from "./bytecode/Fe.sol";
 
 import {FlashLoan, IFlashLoanReceiver} from "../src/FlashLoan.sol";
 import {DeployLib} from "../src/DeployLib.sol";
@@ -33,6 +34,14 @@ contract FlashLoanTest is Test {
     function testFlashLoanSolidityBytecode() public {
         console2.log("[Solidity bytecode]");
         address addr = DeployLib.create(SolidityBytecode);
+        console2.log("Deployed at: %s", addr);
+        FlashLoan flashLoan = FlashLoan(payable(addr));
+        utilTestFlashLoan(flashLoan);
+    }
+    
+    function testFlashLoanFeBytecode() public {
+        console2.log("[Fe bytecode]");
+        address addr = DeployLib.create(FeBytecode);
         console2.log("Deployed at: %s", addr);
         FlashLoan flashLoan = FlashLoan(payable(addr));
         utilTestFlashLoan(flashLoan);
