@@ -30,7 +30,7 @@ contract FlashLoan {
             balance_before = evm::balance()
         }
         assert balance_before >= amount, "FlashLoan: Insufficient liquidity"
-        let fee: u256 = (amount * self.feePerMillion) / 100
+        let fee: u256 = (amount * self.feePerMillion) / 1000000
         ctx.send_value(to: ctx.msg_sender(), wei: amount)
 
         let mut receiver: IFlashLoanReceiver = IFlashLoanReceiver(ctx.msg_sender())
@@ -52,6 +52,11 @@ contract FlashLoan {
         return self.owner
     }
 
+    pub fn setOwner(mut self, ctx: Context, _owner: address) {
+        self.only_owner(ctx)
+        self.owner = _owner
+    }
+
     pub fn feePerMillion(self) -> u256 {
         return self.feePerMillion
     }
@@ -65,5 +70,29 @@ contract FlashLoan {
     pub fn withdraw(self, mut ctx: Context, recipient: address, amount: u256) {
         self.only_owner(ctx)
         ctx.send_value(to: recipient, wei: amount)
+    }
+}
+
+contract Vm {
+    pub fn prank(self, addr: address) {
+        revert
+    }
+}
+
+contract FlashLoanTest {
+    pub fn test(self, mut ctx: Context, loanAddr: address, receiver: address) {
+        let feePerMillion: u256 = 1000
+        let liquidity: u256 = 1000000
+        let amount: u256 = 1000
+
+        let vmAddr: address = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D
+        let mut vm: Vm = Vm(vmAddr)
+        let mut flashLoan: FlashLoan = FlashLoan(loanAddr)
+        flashLoan.setFeePerMillion(ctx: ctx, _feePerMillion: feePerMillion)
+        ctx.send_value(to: loanAddr, wei: liquidity)
+        ctx.send_value(to: receiver, wei: liquidity)
+
+        vm.prank(addr: receiver)
+        flashLoan.flashLoan(ctx: ctx, amount: amount)
     }
 }

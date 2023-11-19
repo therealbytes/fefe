@@ -2,48 +2,37 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
 
 import {DeployedBytecode as SolidityBytecode} from "./bytecode/Solidity.sol";
 import {DeployedBytecode as FeBytecode} from "./bytecode/Fe.sol";
+import {FlashLoanReceiver} from "./utils.sol";
 
-import {FlashLoan, IFlashLoanReceiver} from "../src/FlashLoan.sol";
+import {FlashLoan} from "../src/FlashLoan.sol";
 import {DeployLib} from "../src/DeployLib.sol";
-
-contract FlashLoanReceiver is IFlashLoanReceiver {
-    receive() external payable {}
-
-    function executeOperation(
-        uint256 amount,
-        uint256 fee,
-        address initiator
-    ) external {
-        payable(msg.sender).transfer(amount + fee);
-    }
-}
 
 contract FlashLoanTest is Test {
     function setUp() public {}
 
     function testFlashLoanSolidity() public {
         console2.log("[Solidity]");
+        console2.log("Creating FlashLoan contract");
         FlashLoan flashLoan = new FlashLoan();
         utilTestFlashLoan(flashLoan);
     }
 
     function testFlashLoanSolidityBytecode() public {
         console2.log("[Solidity bytecode]");
-        address addr = DeployLib.create(SolidityBytecode);
-        console2.log("Deployed at: %s", addr);
-        FlashLoan flashLoan = FlashLoan(payable(addr));
+        console2.log("Creating FlashLoan contract");
+        address payable addr = payable(DeployLib.create(SolidityBytecode));
+        FlashLoan flashLoan = FlashLoan(addr);
         utilTestFlashLoan(flashLoan);
     }
-    
+
     function testFlashLoanFeBytecode() public {
         console2.log("[Fe bytecode]");
-        address addr = DeployLib.create(FeBytecode);
-        console2.log("Deployed at: %s", addr);
-        FlashLoan flashLoan = FlashLoan(payable(addr));
+        console2.log("Creating FlashLoan contract");
+        address payable addr = payable(DeployLib.create(FeBytecode));
+        FlashLoan flashLoan = FlashLoan(addr);
         utilTestFlashLoan(flashLoan);
     }
 
@@ -54,7 +43,7 @@ contract FlashLoanTest is Test {
 
         console2.log("Setting fee");
         flashLoan.setFeePerMillion(feePerMillion);
-        console2.log("Deploying FlashLoanReceiver contract");
+        console2.log("Creating FlashLoanReceiver contract");
         FlashLoanReceiver flashLoanReceiver = new FlashLoanReceiver();
 
         console2.log("Funding FlashLoan contract");
@@ -68,7 +57,8 @@ contract FlashLoanTest is Test {
         uint256 gasGasLeft = gasleft();
         flashLoan.flashLoan(amount);
         uint256 gasGasUsed = gasGasLeft - gasleft();
-        console2.log("Success.");
         console2.log("Gas used: %d", gasGasUsed);
+        require(address(flashLoanReceiver).balance == liquidity - amount * feePerMillion / 1e6, "Incorrect balance");
+        console2.log("Success.");
     }
 }

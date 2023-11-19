@@ -45,6 +45,10 @@ contract FlashLoan {
         emit FlashLoanExecuted(msg.sender, amount);
     }
 
+    function setOwner(address _owner) onlyOwner external {
+        owner = _owner;
+    }
+
     function setFeePerMillion(uint256 _feePerMillion) onlyOwner external {
         require(_feePerMillion <= 1e6, "FlashLoan: Fee too high");
         feePerMillion = _feePerMillion;
