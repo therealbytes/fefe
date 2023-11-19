@@ -77,6 +77,12 @@ contract Vm {
     pub fn prank(self, addr: address) {
         revert
     }
+    pub fn startPrank(self, addr: address) {
+        revert
+    }
+    pub fn stopPrank(self) {
+        revert
+    }
 }
 
 contract FlashLoanTest {
