@@ -83,7 +83,7 @@ contract Vm {
     pub fn stopPrank(self) {
         revert
     }
-    pub expectRevert(self) {
+    pub fn expectRevert(self) {
         revert
     }
 }
