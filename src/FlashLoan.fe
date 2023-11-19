@@ -83,6 +83,9 @@ contract Vm {
     pub fn stopPrank(self) {
         revert
     }
+    pub expectRevert(self) {
+        revert
+    }
 }
 
 contract FlashLoanTest {
