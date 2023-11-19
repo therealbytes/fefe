@@ -86,19 +86,24 @@ contract Vm {
 }
 
 contract FlashLoanTest {
+    vm: Vm
+
+    pub fn __init__(mut self) {
+        let vmAddr: address = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D
+        self.vm = Vm(vmAddr)
+    }
+
     pub fn test(self, mut ctx: Context, loanAddr: address, receiver: address) {
         let feePerMillion: u256 = 1000
         let liquidity: u256 = 1000000
         let amount: u256 = 1000
 
-        let vmAddr: address = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D
-        let mut vm: Vm = Vm(vmAddr)
         let mut flashLoan: FlashLoan = FlashLoan(loanAddr)
         flashLoan.setFeePerMillion(ctx: ctx, _feePerMillion: feePerMillion)
         ctx.send_value(to: loanAddr, wei: liquidity)
         ctx.send_value(to: receiver, wei: liquidity)
 
-        vm.prank(addr: receiver)
+        self.vm.prank(addr: receiver)
         flashLoan.flashLoan(ctx: ctx, amount: amount)
 
         let mut receiverBalance: u256
