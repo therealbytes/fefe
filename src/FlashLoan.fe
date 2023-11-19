@@ -94,5 +94,12 @@ contract FlashLoanTest {
 
         vm.prank(addr: receiver)
         flashLoan.flashLoan(ctx: ctx, amount: amount)
+
+        let mut receiverBalance: u256
+        unsafe {
+            receiverBalance = evm::balance_of(receiver)
+        }
+
+        assert receiverBalance == liquidity - amount * feePerMillion / 1000000, "Incorrect balance"
     }
 }
